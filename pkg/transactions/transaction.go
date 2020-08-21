@@ -3,6 +3,7 @@ package transaction
 import (
 	"bytes"
 	"encoding/csv"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -13,11 +14,17 @@ import (
 )
 
 type Transaction struct {
-	Id string
-	From string
-	To string
-	Amount int64
-	Created int64
+	XMLName string `xml:"transaction"`
+	Id      string  `xml:"id"`
+	From    string `xml:"from"`
+	To      string `xml:"to"`
+	Amount  int64  `xml:"amount"`
+	Created int64  `xml:"created"`
+}
+
+type Transactions struct {
+	XMLName string `xml:"transactions"`
+	Transactions []Transaction
 }
 
 type Service struct {
@@ -29,10 +36,17 @@ func NewService() *Service {
 	return &Service{}
 }
 
+type Writer struct {
+	err error
+	buf []byte
+	n int
+	wr io.Writer
+}
+
 func (s *Service) Register(from, to string, amount int64) (string, error) {
-	// Проверка на ошибки
+
 	t := &Transaction{
-		Id:      "01", // ВНИМАНИЕ  USE uuid later
+		Id:      "01",
 		From:    from,
 		To:      to,
 		Amount:  amount,
@@ -43,13 +57,6 @@ func (s *Service) Register(from, to string, amount int64) (string, error) {
 	s.transactions = append(s.transactions, t)
 
 	return t.Id, nil
-}
-
-type Writer struct {
-	err error
-	buf []byte
-	n int
-	wr io.Writer
 }
 
 func (s *Service) Export(writer io.Writer) error {
@@ -100,6 +107,38 @@ func (s *Service) Import(filename string) ([]Transaction,error) {
 	return sliceOfTransactions, nil
 }
 
+//////Тут json
+
+func ExportXml(sliceOfTransactions Transactions)  ([]byte, error) { //sliceOFTransactions []Transaction
+
+	encoded, err := xml.Marshal(sliceOfTransactions)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	encoded = append([]byte(xml.Header), encoded...)
+	log.Println(string(encoded))
+
+	return encoded, nil
+}
+
+
+func ImportXml(encoded []byte) (error) {
+	var decoded Transactions
+	// важно: передаём указатель
+	err := xml.Unmarshal(encoded, &decoded)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	log.Printf("%#v", decoded)
+
+	return nil
+}
+
+
+
+
 func mapRowToTransaction(slice []string) Transaction{
 	var a Transaction
 	for i := 0; i <= 4; i++ {
@@ -127,35 +166,3 @@ func mapRowToTransaction(slice []string) Transaction{
 	}
 	return a
 }
-
-/*
-file, err := os.Open(filename)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-	defer func(c io.Closer) {
-		if cerr := c.Close(); cerr != nil {
-			log.Println(cerr)
-			if err == nil {
-				err = cerr
-			}
-		}
-	}(file)
-
-	reader := csv.NewReader(file)
-	records := make([][]string, 0)
-	for {
-		record, err := reader.Read()
-		if err != nil {
-			if err != io.EOF { // та же самая логика
-				log.Println(err)
-				return err
-			}
-			records = append(records, record)
-			break
-		}
-		records = append(records, record)
-	}
-	return nil
- */
