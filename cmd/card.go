@@ -15,26 +15,28 @@ func main() {
 	//svc := transaction.NewService()
 	//fmt.Println(svc.Import("export.csv"))
 
-	transactions := []transaction.Transaction{
-		{
-			Id:      "1",
-			From:    "0001",
-			To:      "0002",
-			Amount:  100_00,
-			Created: time.Now().Unix(),
-		},
-		{
-			Id:      "2",
-			From:    "0001",
-			To:      "0002",
-			Amount:  200_00,
-			Created: time.Now().Unix(),
+	transactions := transaction.Transactions{
+		Transactions: []transaction.Transaction{
+			{
+				Id:      "1",
+				From:    "0001",
+				To:      "0002",
+				Amount:  100_00,
+				Created: time.Now().Unix(),
+			},
+			{
+				Id:      "2",
+				From:    "0001",
+				To:      "0002",
+				Amount:  200_00,
+				Created: time.Now().Unix(),
+			},
 		},
 	}
 
-	file, _ := transaction.ExportJson(transactions)
-	slice, _ := transaction.ImportJson(file)
-	log.Println(slice)
+	file, _ := transaction.ExportXml(transactions)
+	//slice:= transaction.ImportXml(file)
+	log.Println(transaction.ImportXml(file))
 
 }
 

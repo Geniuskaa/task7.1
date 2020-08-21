@@ -3,7 +3,7 @@ package transaction
 import (
 	"bytes"
 	"encoding/csv"
-	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -14,12 +14,17 @@ import (
 )
 
 type Transaction struct {
-	//XMLName string `xml:"transaction"`
-	Id      string  `json:"id"` //xml:"id"`
-	From    string `json:"from"` //xml:"from"`
-	To      string `json:"to"` //xml:"to"`
-	Amount  int64  `json:"amount"` //xml:"amount"`
-	Created int64  `json:"created"` //xml:"created"`
+	XMLName string `xml:"transaction"`
+	Id      string  `xml:"id"`
+	From    string `xml:"from"`
+	To      string `xml:"to"`
+	Amount  int64  `xml:"amount"`
+	Created int64  `xml:"created"`
+}
+
+type Transactions struct {
+	XMLName string `xml:"transactions"`
+	Transactions []Transaction
 }
 
 type Service struct {
@@ -104,36 +109,31 @@ func (s *Service) Import(filename string) ([]Transaction,error) {
 
 //////Тут json
 
-func ExportJson(sliceOfTransactions []Transaction)  ([]byte, error) { //sliceOFTransactions []Transaction
+func ExportXml(sliceOfTransactions Transactions)  ([]byte, error) { //sliceOFTransactions []Transaction
 
-	encoded, err := json.Marshal(sliceOfTransactions)
+	encoded, err := xml.Marshal(sliceOfTransactions)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
+	encoded = append([]byte(xml.Header), encoded...)
 	log.Println(string(encoded))
-
-	/*var decoded []Transaction
-	// Важно: передаём указатель, чтобы функция смогла записать данные
-	err = json.Unmarshal(encoded, &decoded)
-	log.Printf("%#v", decoded)*/
-
 
 	return encoded, nil
 }
 
 
-func ImportJson(encoded []byte) ([]Transaction, error) {
-	var decoded []Transaction
+func ImportXml(encoded []byte) (error) {
+	var decoded Transactions
 	// важно: передаём указатель
-	err := json.Unmarshal(encoded, &decoded)
+	err := xml.Unmarshal(encoded, &decoded)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return err
 	}
 	log.Printf("%#v", decoded)
 
-	return decoded,nil
+	return nil
 }
 
 
